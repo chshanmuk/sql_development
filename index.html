@@ -3,34 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SQL Tutor (English Auto-Play)</title>
+  <title>SQL Tutor with Dual-Language Audio</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
   <style>
     body { margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f4f4f4; }
     canvas { border: 1px solid #aaa; box-shadow: 0 0 10px rgba(0,0,0,0.2); margin-bottom: 20px; }
+    label { font-family: sans-serif; margin-bottom: 10px; }
+    button { padding: 8px 15px; font-size: 16px; margin-top: 15px; cursor: pointer; }
   </style>
 </head>
 <body>
+  <label for="langSlider">Telugu Mix: <span id="sliderValue">0%</span></label>
+  <input type="range" id="langSlider" min="0" max="100" value="0" step="10">
+  <button id="startBtn">Start Lesson</button>
+
 <script>
 let step = 0;
 let lastChange = 0;
 let started = false;
+let langMix = 0;
 
 let captionsEN = [
   'Step 1: Partitioning (Blue)',
   'Step 2: Ordering (Orange)',
   'Step 3: Current Row (Green)'
 ];
+let captionsTE = [
+  'దశ 1: డేటా విభజన (నీలం)',
+  'దశ 2: రో క్రమపరచడం (నారింజ)',
+  'దశ 3: ప్రస్తుత రో (పచ్చ)'
+];
 
 let soundsEN = [];
-let unlockOsc;
+let soundsTE = [];
 
 function preload() {
   soundFormats('mp3');
   soundsEN[0] = loadSound('step1_en.mp3');
   soundsEN[1] = loadSound('step2_en.mp3');
   soundsEN[2] = loadSound('step3_en.mp3');
+  soundsTE[0] = loadSound('step1_te.mp3');
+  soundsTE[1] = loadSound('step2_te.mp3');
+  soundsTE[2] = loadSound('step3_te.mp3');
 }
 
 function setup() {
@@ -38,14 +53,18 @@ function setup() {
   textAlign(CENTER, CENTER);
   textSize(18);
 
-  // Mobile unlock hack: play a short silent tone to allow autoplay
-  userStartAudio().then(() => {
-    unlockOsc = new p5.Oscillator('sine');
-    unlockOsc.start();
-    unlockOsc.amp(0);
-    unlockOsc.stop(0.1);
+  let slider = document.getElementById('langSlider');
+  let sliderValue = document.getElementById('sliderValue');
+
+  slider.addEventListener('input', function(e) {
+    langMix = parseInt(e.target.value);
+    sliderValue.textContent = langMix + '%';
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
     started = true;
     playStepAudio();
+    document.getElementById('startBtn').style.display = 'none';
   });
 }
 
@@ -80,14 +99,23 @@ function drawTable() {
 
 function drawCaption() {
   fill(0);
-  text(captionsEN[step], width / 2, 250);
+  if (langMix >= 50) {
+    text(captionsTE[step], width / 2, 250);
+  } else {
+    text(captionsEN[step], width / 2, 250);
+  }
 }
 
 function playStepAudio() {
   for (let i = 0; i < soundsEN.length; i++) {
     if (soundsEN[i].isPlaying()) soundsEN[i].stop();
+    if (soundsTE[i].isPlaying()) soundsTE[i].stop();
   }
-  soundsEN[step].play();
+  if (langMix >= 50) {
+    soundsTE[step].play();
+  } else {
+    soundsEN[step].play();
+  }
 }
 </script>
 </body>
